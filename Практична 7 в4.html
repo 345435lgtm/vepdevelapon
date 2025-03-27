@@ -1,0 +1,86 @@
+<DOCTYPE HTML>
+    <html>
+<head>
+    <title>Типи даних JS</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Список справ</h1>
+    <form id="task-form">
+        <input type="text" id="task-name" placeholder="Назва завдання" required>
+        <input type="date" id="task-deadline" required>
+        <select id="task-priority">
+            <option value="1">Низький</option>
+            <option value="2">Середній</option>
+            <option value="3">Високий</option>
+        </select>
+        <button type="submit">Додати</button>
+    </form>
+    <select id="filter">
+        <option value="all">Всі</option>
+        <option value="completed">Виконані</option>
+        <option value="pending">Невиконані</option>
+    </select>
+    <ul id="task-list"></ul>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+    const taskForm = document.getElementById("task-form");
+    const taskList = document.getElementById("task-list");
+    const filterSelect = document.getElementById("filter");
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    function saveTasks() {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    function renderTasks() {
+        taskList.innerHTML = "";
+        let filteredTasks = tasks.filter(task => {
+            if (filterSelect.value === "all") return true;
+            if (filterSelect.value === "completed") return task.completed;
+            if (filterSelect.value === "pending") return !task.completed;
+        });
+
+        filteredTasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline) || b.priority - a.priority);
+
+        filteredTasks.forEach((task, index) => {
+            const taskItem = document.createElement("li");
+            taskItem.innerHTML = `
+                <span class="${task.completed ? 'completed' : ''}">
+                    ${task.name} (Пріоритет: ${task.priority}, Дедлайн: ${task.deadline})
+                </span>
+                <button onclick="toggleComplete(${index})">✔</button>
+                <button onclick="deleteTask(${index})">❌</button>
+            `;
+            taskList.appendChild(taskItem);
+        });
+    }
+
+    taskForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const name = document.getElementById("task-name").value;
+        const priority = document.getElementById("task-priority").value;
+        const deadline = document.getElementById("task-deadline").value;
+        tasks.push({ name, priority, deadline, completed: false });
+        saveTasks();
+        renderTasks();
+        taskForm.reset();
+    });
+
+    window.toggleComplete = function (index) {
+        tasks[index].completed = !tasks[index].completed;
+        saveTasks();
+        renderTasks();
+    };
+
+    window.deleteTask = function (index) {
+        tasks.splice(index, 1);
+        saveTasks();
+        renderTasks();
+    };
+
+    filterSelect.addEventListener("change", renderTasks);
+    renderTasks();
+});
+    </script>
+`;
